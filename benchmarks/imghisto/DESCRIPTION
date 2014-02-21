@@ -1,0 +1,4 @@
+This program computes the N-bin histogram of a 12-bit monochrome image, for configurable values of N.  This histogram algorithm is for histograms having a small size (they fit in GPU local memory), input distributed over a broad region of the histogram, and smooth regions in the input.  Smoothness means that adjacent pixels often map to the same histogram bin.  The GPU code is written to handle smooth inputs efficiently.
+
+See also:
+ Juan Gómez-Luna, José González-Linares, José Benavides and Nicolás Guil.  "An optimized approach to histogram computation on GPU."  in Machine Vision and Applications, 2012.  http://dx.doi.org/10.1007/s00138-012-0443-3.

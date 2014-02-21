@@ -1,0 +1,2 @@
+OPTIMIZATION=2
+MCUDA_PATH=/usr/local/mcuda

@@ -1,0 +1,29 @@
+def ComputeRhoPhi(phiR, dR, phiI, dI):
+    return ((x*d1 + y*d2, x*d2 - y*d1)
+            for (x,d1,y,d2) in zip4(phiR, dR, phiI, dI))
+
+def ComputeKValues(Kx, Ky, Kz, phiR, dR, phiI, dI):
+    return build(zip4(Kx, Ky, Kz, ComputeRhoPhi(phiR, dR, phiI, dI)))
+
+def ComputeFH(Kvalues, x, y, z):
+    # Compute the Fourier transform contribution of a frequency-domain signal at
+    # 'kvec', for the space-domain signal at 'xvec'
+    def ftcoeff(kvec, xvec):
+        (Kx, Ky, Kz, (phiR, phiI)) = kvec
+        (x, y, z) = xvec
+        p2 = 2 * pi
+        expArg = p2 * (x*Kx + y*Ky + z*Kz)
+        return (phiR * cos(expArg) - phiI * sin(expArg),
+                phiI * cos(expArg) + phiR * sin(expArg))
+
+    return [sum(ftcoeff(kvec, xvec) for kvec in Kvalues)
+            for xvec in zip3(x,y,z)]
+
+export cplusplus ComputeKValues : \
+    list(float) * list(float) * list(float) * \
+    list(float) * list(float) * list(float) * list(float) -> \
+    list((float, float, float, (float, float)))
+
+export cplusplus ComputeFH : list((float, float, float, (float, float))) * \
+    list(float) * list(float) * list(float) \
+    -> list((float, float))

@@ -1,0 +1,76 @@
+
+
+def cutoff_kernel(nz, ny, nx,
+                  zlo, ylo, xlo,
+                  gridspacing : float,
+                  cutoff : float,
+                  atoms):
+
+    a2 = cutoff * cutoff
+    inv_a2 = 1 / a2
+    grid_cutoff = cutoff // gridspacing
+
+    lattice_domain = arrayDomain  ((0, 0, 0), (nz, ny, nx))
+    lattice_domain_x = arrayDomain (0, nx)
+    lattice_domain_y = arrayDomain (0, ny)
+    lattice_domain_z = arrayDomain (0, nz)
+
+    def sq(x): return x * x
+
+    def distance2(r1, r2):
+        (z1, y1, x1) = r1
+        (z2, y2, x2) = r2
+        return sq(z2 - z1) + sq(y2 - y1) + sq(x2 - x1)
+
+    def pot(aq : float, r2 : float):
+        s = sq(1 - r2 * inv_a2)
+        return aq * s / sqrt(r2)
+
+    def flattened_range(origin : float, dom : iter(dim1, int)) -> iter(list_dim, (int, float)):
+        return ((i, sq(origin - __fromint__(i) * gridspacing))
+                for i in flatten(dom))
+
+    def neighborhood_potential(atom : (float, float, float, float)) \
+          -> iter(list_dim, ((int, int, int), float)):
+        (ax, ay, az, aq) = atom
+
+        # Find a grid point near the atom
+        rel_ax = ax - xlo
+        rel_ay = ay - ylo
+        rel_az = az - zlo
+        gridx = rel_ax // gridspacing
+        gridy = rel_ay // gridspacing
+        gridz = rel_az // gridspacing
+
+        # Iterate over a neighborhood that is big enough to include all points
+        # within the cutoff radius.  The range is [-grid_cutoff, grid_cutoff+1]
+        # in each dimension.  The extra +1 is to compensate for rounding down
+        # when selecting a grid point.
+        neighborhood_z = arrayDomain (gridz - grid_cutoff, gridz + grid_cutoff + 2)
+        neighborhood_y = arrayDomain (gridy - grid_cutoff, gridy + grid_cutoff + 2)
+        neighborhood_x = arrayDomain (gridx - grid_cutoff, gridx + grid_cutoff + 2)
+        d_z = intersection(lattice_domain_z, neighborhood_z)
+        d_y = intersection(lattice_domain_y, neighborhood_y)
+        d_x = intersection(lattice_domain_x, neighborhood_x)
+        assert stride(d_z) == 1
+        assert stride(d_y) == 1
+        assert stride(d_x) == 1
+        range_y = indices(d_y)
+        range_x = indices(d_x)
+
+        return (((iz, iy, ix), pot(aq, d2))
+                for (iz, dz2) in flattened_range(rel_az, indices(d_z))
+                if dz2 < a2
+                for (iy, dy2) in flattened_range(rel_ay, range_y)
+                let dyz2 = dz2 + dy2
+                if dyz2 < a2
+                for (ix, dx2) in flattened_range(rel_ax, range_x)
+                let d2 = dyz2 + dx2
+                if d2 < a2)
+
+    return scatter(array3Scatter(lattice_domain, floatSumScatter),
+                   (x for atom in atoms for x in neighborhood_potential(atom)))
+
+export cplusplus cutoff_kernel : int * int * int * \
+    float * float * float * float * float * \
+    list((float, float, float, float)) -> array3(float)

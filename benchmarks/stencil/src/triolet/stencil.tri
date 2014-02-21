@@ -1,0 +1,39 @@
+
+def get_inner_array(edges):
+    (zmin, ymin, xmin) = fromJust(loBound(domain(edges)))
+    (zend, yend, xend) = fromJust(hiBound(domain(edges)))
+
+    assert stride(domain(edges)) == (1,1,1)
+
+    return [x for x in edges[zmin+1:zend-1,ymin+1:yend-1,xmin+1:xend-1]]
+
+export cplusplus get_inner_array : array3(float) -> array3(float)
+
+def combine_arrays(edges, A):
+    assert stride(domain(A)) == (1,1,1)
+    assert stride(domain(edges)) == (1,1,1)
+
+    padded_A = unionView3D(build(iter(A)), build(iter(edges)))
+
+    return [x for x in padded_A]
+
+export cplusplus combine_arrays : array3(float) * array3(float) -> array3(float)
+
+def stencil(c0, c1, edges : array3(float), A : array3(float)) -> array3(float):
+    assert fromJust(loBound(domain(edges))) == (0,0,0)
+    assert fromJust(loBound(domain(A))) == (1,1,1)
+    assert stride(domain(A)) == (1,1,1)
+    assert stride(domain(edges)) == (1,1,1)
+
+    # Take the union of edges and A
+    padded_A = unionView3D(build(iter(A)), build(iter(edges)))
+
+    def kernel(B : view(dim3, float)):
+        local = B[0,0,0]
+        in_flux = B[0,0,1] + B[0,0,-1] + B[0,1,0] + B[0,-1,0] + B[1,0,0] + B[-1,0,0]
+        return in_flux * c1 - local * c0
+
+    stencil_dom = arrayDomain((-1,-1,-1),(2,2,2))
+    return stencil3D(domain(A), stencil_dom, kernel, padded_A)
+
+export cplusplus stencil : float * float * array3(float) * array3(float) -> array3(float)

@@ -1,0 +1,9 @@
+def pixel_keyval(pixel):
+    return (pixel, None)
+
+def accel_histo(img_width, img_height, img):
+    scatter_algorithm = listScatter(list_dim(Just(img_width*img_height)), countingScatter)
+    new_img = map(pixel_keyval, img)
+    return scatter(scatter_algorithm, new_img)
+
+export cplusplus accel_histo : int * int * list(int) -> list(int)

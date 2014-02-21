@@ -1,0 +1,91 @@
+
+###############################################################################
+# Corrleation
+
+# Compute the angle between 'u' and 'v'.
+# Classify it according to the threshold values in 'binb'.
+# The result is the index of a histogram bin.
+def bin(binb, nbins, u, v):
+
+  # Dot product
+  (ux, uy, uz) = u
+  (vx, vy, vz) = v
+  dot = ux * vx + uy * vy + uz * vz
+
+  # Binary search in the lookup table to choose a bin index
+  def find_bin(min : int, max : int) -> int:
+    if max > min + 1:
+      k = (max + min) // 2
+      if dot >= binb[k]: max = k
+      else:              min = k
+      return find_bin(min, max)
+    else:
+      return min if dot >= binb[min] else max + 1 if dot < binb[max] else max
+
+  return find_bin(0, nbins)
+
+# Given a sequence of pairs of vectors (u1,v1), (u2,v2), ...,
+# compute the angle between each (u, v) pair,
+# and collect the angles into a histogram.
+@inline
+def correlate_angles(pairs, binb, nbins):
+  bin_values = ((bin(binb, nbins, u, v), 1) for (u, v) in pairs)
+  return histogram(nbins+2, bin_values)
+
+
+###############################################################################
+# Self-corrleation
+
+export cplusplus compute_self : list(list((float,float,float))) * \
+                                list(float) * int * int -> list(int64)
+
+# Correlate 'data' with itself.  Process all pairs of vectors in 'data'.
+@inline
+def compute_single_self(us, binb, nbins):
+  # Do correlation on all pairs from 'us'
+  return correlate_angles(us, binb, nbins)
+
+def compute_self(us, binb, nbins, nsets):
+  return compute_single_self(flattened_pairs(us), binb, nbins)
+
+def flattened_pairs(us):
+  return par(flatten( (all_pairs(u) for u in us) ))
+
+def flatten(uss):
+  return (u for us in uss for u in us)
+
+# Get all pairs of members of us
+def all_pairs(us):
+  # Pair each item 'u' with all later items 'v'
+  return ((u,v) for (i, u) in enumerate(us) for v in us[i+1:])
+
+# Associate an index with each element of a container
+def enumerate(x):
+  return zip(indices(domain(x)), x)
+
+
+###############################################################################
+# Cross-corrleation
+
+export cplusplus compute_cross : list((float,float,float)) * \
+                                 list(list((float,float,float))) * \
+                                 list(float) * int * int -> list(int64)
+
+# Correlate 'data1' with 'data2'.
+# Compare each member of 'data1' to a member of 'data2'.
+@inline
+def compute_single_cross(uvs, binb, nbins):
+  # Do cross-correlation
+  return correlate_angles(uvs, binb, nbins)
+
+def compute_cross(us, vs, binb, nbins, nsets):
+  return compute_single_cross(cartesian_flatten(us, vs), binb, nbins)
+
+# Cartesian product of x and y
+def cartesian(xs, ys):
+  return ((x, y) for x in xs for y in ys)
+
+def cartesian_flatten(us, vs):
+  return par(flatten( (cartesian(us, v) for v in vs)))
+
+

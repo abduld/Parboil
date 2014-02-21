@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+# (c) Copyright 2012 The Board of Trustees of the University of Illinois.
+
+import sys
+import itertools
+
+import filecompare as fc
+import binaryfilecompare as bfc
+
+size_err = "Output data size does not match expected size\n"
+recon_err = "Output mismatch\n"
+
+def compare_array(count):
+	return fc.Compare(bfc.many_uint32(count), message=recon_err)
+
+comparison = fc.Then(
+	fc.Bind(fc.Compare(bfc.uint32, message=size_err), compare_array),
+	fc.Compare(bfc.eof))
+
+fc.default_main(comparison)

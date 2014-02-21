@@ -1,0 +1,26 @@
+
+def dotprod(A, B):
+  return sum(x * y for (x, y) in zip(A, B))
+
+# Matrix multiplication
+# C = alpha * (M * N^T) + beta * P
+def sgemm_accel(M, N, P, alpha, beta):
+  # Check array bounds and dimensions
+  assert stride(domain(M)) == (1, 1)
+  assert stride(domain(N)) == (1, 1)
+  assert stride(domain(P)) == (1, 1)
+  assert fromJust(loBound(domain(M))) == (0, 0)
+  assert fromJust(loBound(domain(N))) == (0, 0)
+  assert fromJust(loBound(domain(P))) == (0, 0)
+  (m_height, m_width) = fromJust(hiBound(domain(M)))
+  (n_height, n_width) = fromJust(hiBound(domain(N)))
+  (p_height, p_width) = fromJust(hiBound(domain(P)))
+  assert m_height == n_height
+  assert m_width == p_width
+  assert n_width == p_height
+
+  product = (dotprod(A, B) for (A, B) in outerproduct(cols(N), cols(M)))
+  return [alpha * mn + beta * p for (mn, p) in zip(product, P)]
+
+export cplusplus sgemm_accel : array2(float) * array2(float) * array2(float) \
+       * float * float -> array2(float)

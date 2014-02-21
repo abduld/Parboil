@@ -1,0 +1,26 @@
+
+def enumerate(xs): return zip(indices(domain(xs)), xs)
+
+# Use the permutation array 'perm' to permute 'vals'.
+# The permutation should be one-to-one.
+def permute(perm, vals):
+    dom = arrayDomain(0, len(perm))
+    return permute1D(dom, zip(perm, vals))
+
+# Sparse matrix vector multiplication in JDS format
+def spmv(perm : list(int),
+         nzcnt : list(int),
+         ptr : list(int),
+         data : list(float),
+         col_indices : list(int),
+         x_vector : list(float)):
+
+    # Compute one dot product
+    def dotprod(i, num_nonzeros):
+        return sum(let j = p+i in data[j] * x_vector[col_indices[j]]
+                   for p in ptr[:num_nonzeros])
+
+    # Associate each result with an output index
+    return permute(perm, (dotprod(i, nnz) for (i, nnz) in enumerate(nzcnt)))
+
+export cplusplus spmv : list(int) * list(int) * list(int) * list(float) * list(int) * list(float) -> array1(float)

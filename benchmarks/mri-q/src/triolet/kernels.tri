@@ -1,0 +1,24 @@
+def ComputePhiMag(phiR, phiI):
+	return (x**2 + y**2 for (x,y) in zip(phiR, phiI))
+
+def ComputeKValues(kx, ky, kz, phiR, phiI):
+	return build(par(zip4(kx,ky,kz, ComputePhiMag(phiR, phiI))))
+
+def ComputeQ(KphiMag, x, y, z):
+	# Compute the Fourier transform contribution of a frequency-domain signal at
+        # 'kvec', for the space-domain signal at 'xvec'
+	def ftcoeff(kvec, xvec):
+		(Kx, Ky, Kz, phi) = kvec
+		(x, y, z) = xvec
+		p2 = 2 * pi
+		expArg = p2 * (x*Kx + y*Ky + z*Kz)
+		return (phi * cos(expArg), phi * sin(expArg))
+
+	return [sum(ftcoeff(kvec, xvec) for kvec in KphiMag)
+                for xvec in par(zip3(x,y,z))]
+
+export cplusplus ComputeKValues : list(float) * list(float) * list(float) * list(float) * list(float) \
+    -> list((float,float,float,float))
+
+export cplusplus ComputeQ : list((float, float, float, float)) * \
+    list(float) * list(float) * list(float) -> list((float, float))

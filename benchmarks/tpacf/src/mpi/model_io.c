@@ -1,0 +1,32 @@
+// (C) Copyright 2013, University of Illinois, All Rights Reserved
+#include <sys/time.h>
+#include <stdio.h>
+#include <math.h>
+#include <strings.h>
+#include <math.h>
+#include "model.h"
+
+int readdatafile(char *fname, struct cartesian *data, int npoints) {
+  FILE *infile;
+  int lcount = 0;
+  float ra, dec;
+  if ((infile = fopen(fname, "r")) == NULL) {
+      fprintf(stderr, "Unable to open data file %s for reading\n", fname);
+      return lcount;
+  }
+  for (lcount = 0; lcount < npoints; lcount++) {
+      if (fscanf(infile, "%f %f", &ra, &dec) != 2)
+	break;
+        {
+	  float rarad = D2R * ra;
+	  float decrad = D2R * dec;
+	  float cd = cos(decrad);
+	  data[lcount].x = cos(rarad) * cd;
+	  data[lcount].y = sin(rarad) * cd;
+	  data[lcount].z = sin(decrad);
+        }
+  }
+  fclose(infile);
+  return lcount;
+}
+
