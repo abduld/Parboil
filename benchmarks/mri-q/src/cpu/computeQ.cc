@@ -19,7 +19,7 @@ struct kValues {
   float PhiMag;
 };
 
-inline
+static inline
 void 
 ComputePhiMagCPU(int numK, 
                  float* phiR, float* phiI,
@@ -32,7 +32,7 @@ ComputePhiMagCPU(int numK,
   }
 }
 
-inline
+static inline
 void
 ComputeQCPU(int numK, int numX,
             struct kValues *kVals,
