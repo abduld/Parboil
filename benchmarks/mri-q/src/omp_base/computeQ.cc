@@ -19,7 +19,7 @@ struct kValues {
   float PhiMag;
 };
 
-inline
+static inline
 void  ComputePhiMagCPU(int numK,  float* phiR, float* phiI, float* phiMag) {
   int indexK = 0;
   //#pragma omp parallel for
@@ -30,7 +30,7 @@ void  ComputePhiMagCPU(int numK,  float* phiR, float* phiI, float* phiMag) {
   }
 }
 
-inline
+static inline
 void ComputeQCPU(int numK, int numX, struct kValues *kVals, float* x, float* y, float* z, float *Qr, float *Qi) {
   int indexK, indexX;
 #pragma omp parallel for
